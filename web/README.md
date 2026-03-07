@@ -48,20 +48,23 @@ cd ..
 
 ### 2. Environment Setup
 
-Create `server/.env`:
+Create `.env` in the web folder:
 ```env
+# Server
 PORT=3000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/whisper
-CLERK_PUBLISHABLE_KEY=your_key
-CLERK_SECRET_KEY=your_secret
-FRONTEND_URL=http://localhost:5173
-```
 
-Create `.env`:
-```env
-VITE_CLERK_PUBLISHABLE_KEY=your_key
+# Clerk
+CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+
+# Frontend (Vite requires VITE_ prefix)
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 VITE_API_URL=http://localhost:3000
+
+# URLs
+FRONTEND_URL=http://localhost:5173
 ```
 
 ### 3. Start Development
