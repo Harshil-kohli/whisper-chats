@@ -1,0 +1,20 @@
+{
+  "phases": {
+    "setup": {
+      "nixPkgs": ["nodejs_20", "bun"]
+    },
+    "install": {
+      "cmds": [
+        "npm ci --prefer-offline --no-audit"
+      ]
+    },
+    "build": {
+      "cmds": [
+        "npm run build"
+      ]
+    }
+  },
+  "start": {
+    "cmd": "npm start"
+  }
+}
