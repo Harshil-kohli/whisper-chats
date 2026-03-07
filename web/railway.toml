@@ -1,8 +1,7 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && cd server && bun install && cd .. && npm run build"
 
 [deploy]
-startCommand = "cd server && bun run start"
+startCommand = "./start.sh"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10

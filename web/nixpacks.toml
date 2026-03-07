@@ -1,14 +1,14 @@
 [phases.setup]
-nixPkgs = ["nodejs", "bun"]
+nixPkgs = ["nodejs_20", "bun"]
 
 [phases.install]
 cmds = [
-  "npm install",
-  "cd server && bun install"
+  "npm ci --prefer-offline --no-audit",
+  "cd server && bun install --frozen-lockfile"
 ]
 
 [phases.build]
 cmds = ["npm run build"]
 
 [start]
-cmd = "cd server && bun run start"
+cmd = "./start.sh"
