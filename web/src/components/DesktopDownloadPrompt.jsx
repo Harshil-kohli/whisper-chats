@@ -65,13 +65,21 @@ export default function DesktopDownloadPrompt() {
       
       alert(instructions);
     } else {
-      // For desktop, provide GitHub releases link
-      const message = `Desktop App Available!\n\nTo download Whisper Chat for ${platform === 'mac' ? 'macOS' : platform === 'linux' ? 'Linux' : 'Windows'}:\n\n1. Visit our GitHub Releases page\n2. Download the latest version for your platform\n3. Extract and run the app\n\nOpening GitHub Releases...`;
+      // For desktop, direct download
+      const downloadUrl = '/downloads/Whisper-Chat-Windows.zip';
       
-      alert(message);
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'Whisper-Chat-Windows.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      // Open GitHub releases page
-      window.open('https://github.com/Harshil-kohli/whisper-chats/releases', '_blank');
+      // Show instructions after download starts
+      setTimeout(() => {
+        alert(`Download started! 📥\n\nOnce downloaded:\n1. Extract the ZIP file\n2. Open the folder\n3. Run "Whisper Chat.exe"\n\nEnjoy the desktop app!`);
+      }, 500);
     }
     
     handleDismiss();
