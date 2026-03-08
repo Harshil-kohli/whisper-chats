@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y curl && \
 
 # Install frontend dependencies
 COPY web/package.json web/package-lock.json* web/bun.lock* ./
-RUN npm install --ignore-scripts
+RUN npm install
 
 # Install server dependencies
 COPY web/server/package.json ./server/
