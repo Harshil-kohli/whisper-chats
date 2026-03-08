@@ -1,9 +1,9 @@
-# Build stage - Updated 2026-03-08
+# Build stage - Force rebuild v2
 FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install Bun
+# Install Bun - v2
 RUN apt-get update && apt-get install -y curl unzip && \
     curl -fsSL https://bun.sh/install | bash && \
     ln -s /root/.bun/bin/bun /usr/local/bin/bun
