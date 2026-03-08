@@ -28,15 +28,44 @@ export const useSocketStore = create((set, get) => ({
     });
 
     socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
+      console.log("✅ Socket connected:", socket.id);
+      // Rejoin active chats on reconnection
+      const state = get();
+      if (state.activeChats) {
+        state.activeChats.forEach(chatId => {
+          socket.emit("join-chat", chatId);
+        });
+      }
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("❌ Socket disconnected:", reason);
     });
 
     socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error.message);
+      console.error("❌ Socket connection error:", error.message);
     });
 
     socket.on("socket-error", (error) => {
-      console.error("Socket error:", error);
+      console.error("❌ Socket error:", error);
+    });
+
+    socket.on("chat-joined", ({ chatId }) => {
+      console.log("✅ Joined chat:", chatId);
+      set((state) => ({
+        activeChats: new Set([...(state.activeChats || []), chatId])
+      }));
+    });
+
+    socket.on("message-sent", ({ messageId, tempId }) => {
+      console.log("✅ Message sent confirmation:", messageId);
+      // Replace temp message with real one
+      if (tempId) {
+        queryClient.setQueriesData({ queryKey: ["messages"] }, (old) => {
+          if (!old) return old;
+          return old.map((m) => (m._id === tempId ? { ...m, _id: messageId } : m));
+        });
+      }
     });
 
     socket.on("online-users", ({ userIds }) => {
@@ -67,6 +96,7 @@ export const useSocketStore = create((set, get) => ({
     });
 
     socket.on("new-message", (message) => {
+      console.log("📨 New message received:", message._id);
       const senderId = message.sender?._id;
 
       // update messages in current chat, replacing optimistic messages
@@ -105,7 +135,7 @@ export const useSocketStore = create((set, get) => ({
       });
     });
 
-    set({ socket, queryClient });
+    set({ socket, queryClient, activeChats: new Set() });
   },
 
   disconnect: () => {
@@ -117,24 +147,51 @@ export const useSocketStore = create((set, get) => ({
         onlineUsers: new Set(),
         typingUsers: new Map(),
         queryClient: null,
+        activeChats: new Set(),
       });
     }
   },
 
   joinChat: (chatId) => {
-    get().socket?.emit("join-chat", chatId);
+    const socket = get().socket;
+    if (socket?.connected) {
+      socket.emit("join-chat", chatId);
+    }
   },
 
   leaveChat: (chatId) => {
-    get().socket?.emit("leave-chat", chatId);
+    const socket = get().socket;
+    if (socket?.connected) {
+      socket.emit("leave-chat", chatId);
+      set((state) => {
+        const activeChats = new Set(state.activeChats);
+        activeChats.delete(chatId);
+        return { activeChats };
+      });
+    }
   },
 
   sendMessage: (chatId, text, currentUser) => {
     const { socket, queryClient } = get();
-    if (!socket?.connected || !queryClient) return;
+    if (!socket?.connected || !queryClient) {
+      console.error("❌ Cannot send message: socket not connected");
+      return;
+    }
+
+    // Validate input
+    const sanitizedText = text.trim();
+    if (!sanitizedText || sanitizedText.length === 0) {
+      console.error("❌ Cannot send empty message");
+      return;
+    }
+
+    if (sanitizedText.length > 5000) {
+      console.error("❌ Message too long");
+      return;
+    }
 
     // create optimistic message
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
     const optimisticMessage = {
       _id: tempId,
       chat: chatId,
@@ -144,8 +201,9 @@ export const useSocketStore = create((set, get) => ({
         email: currentUser.primaryEmailAddress?.emailAddress || "",
         avatar: currentUser.imageUrl,
       },
-      text,
+      text: sanitizedText,
       createdAt: new Date().toISOString(),
+      pending: true,
     };
 
     // add optimistic message immediately
@@ -154,16 +212,35 @@ export const useSocketStore = create((set, get) => ({
       return [...old, optimisticMessage];
     });
 
-    // emit to server
-    socket.emit("send-message", { chatId, text });
+    console.log("📤 Sending message:", tempId);
 
-    // handle errors - remove optimistic message if send fails
-    socket.once("socket-error", () => {
+    // emit to server with acknowledgment callback
+    socket.emit("send-message", { chatId, text: sanitizedText, tempId }, (response) => {
+      if (response?.success) {
+        console.log("✅ Message acknowledged:", response.message?._id);
+        // Message will be replaced by new-message event
+      } else {
+        console.error("❌ Message send failed:", response?.error);
+        // Remove optimistic message on failure
+        queryClient.setQueryData(["messages", chatId], (old) => {
+          if (!old) return [];
+          return old.filter((m) => m._id !== tempId);
+        });
+      }
+    });
+
+    // Timeout fallback - remove optimistic message if no response in 10 seconds
+    setTimeout(() => {
       queryClient.setQueryData(["messages", chatId], (old) => {
         if (!old) return [];
-        return old.filter((m) => m._id !== tempId);
+        const stillPending = old.find((m) => m._id === tempId && m.pending);
+        if (stillPending) {
+          console.error("❌ Message send timeout:", tempId);
+          return old.filter((m) => m._id !== tempId);
+        }
+        return old;
       });
-    });
+    }, 10000);
   },
 
   setTyping: (chatId, isTyping) => {

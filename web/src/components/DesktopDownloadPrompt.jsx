@@ -1,40 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Download, X } from 'lucide-react';
+import { Download, X, Smartphone } from 'lucide-react';
 
 export default function DesktopDownloadPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [platform, setPlatform] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Add delay to ensure page is fully loaded
     const timer = setTimeout(() => {
-      // Check if user is on desktop and not already using the app
-      const isDesktop = window.innerWidth >= 1024;
       const isElectron = window.electron !== undefined;
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isDesktop = window.innerWidth >= 1024;
       
       // Check sessionStorage (only for current session, not persistent)
       const dismissedThisSession = sessionStorage.getItem('hideDesktopPrompt');
 
-      console.log('🔍 Desktop Download Prompt:', {
+      console.log('🔍 Download Prompt:', {
         isDesktop,
+        isMobileDevice,
         isElectron,
-        isMobile,
         dismissedThisSession,
         width: window.innerWidth
       });
 
-      // Show prompt if: desktop size, not electron, not mobile, and not dismissed this session
-      if (isDesktop && !isElectron && !isMobile && !dismissedThisSession) {
-        console.log('✅ Showing desktop download prompt');
+      // Show prompt if: not electron, not dismissed this session
+      // Show on both desktop AND mobile
+      if (!isElectron && !dismissedThisSession) {
+        console.log('✅ Showing download prompt');
         setShowPrompt(true);
+        setIsMobile(isMobileDevice);
         
         // Detect platform
         const userAgent = navigator.userAgent.toLowerCase();
-        if (userAgent.includes('win')) setPlatform('windows');
-        else if (userAgent.includes('mac')) setPlatform('mac');
-        else if (userAgent.includes('linux')) setPlatform('linux');
-        else setPlatform('windows'); // default
+        if (isMobileDevice) {
+          if (userAgent.includes('android')) setPlatform('android');
+          else if (userAgent.includes('iphone') || userAgent.includes('ipad')) setPlatform('ios');
+          else setPlatform('mobile');
+        } else {
+          if (userAgent.includes('win')) setPlatform('windows');
+          else if (userAgent.includes('mac')) setPlatform('mac');
+          else if (userAgent.includes('linux')) setPlatform('linux');
+          else setPlatform('windows'); // default
+        }
       }
     }, 1000); // 1 second delay
 
@@ -45,22 +53,30 @@ export default function DesktopDownloadPrompt() {
     setShowPrompt(false);
     // Store in sessionStorage (clears on page reload/close)
     sessionStorage.setItem('hideDesktopPrompt', 'true');
-    console.log('🚫 Desktop download prompt dismissed (will show again on page reload)');
+    console.log('🚫 Download prompt dismissed (will show again on page reload)');
   };
 
   const handleDownload = () => {
-    // This will be the download link to your GitHub releases or hosting
-    const downloadLinks = {
-      windows: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat-Setup.exe',
-      mac: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.dmg',
-      linux: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.AppImage'
-    };
+    if (isMobile) {
+      // For mobile, show PWA install prompt or app store links
+      alert(`Mobile app available!\n\nFor Android: Install as PWA (Add to Home Screen)\nFor iOS: Install as PWA (Add to Home Screen)\n\nOr download from app stores (coming soon)`);
+    } else {
+      // For desktop, show download link
+      const downloadLinks = {
+        windows: '/downloads/Whisper-Chat-Windows.zip',
+        mac: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.dmg',
+        linux: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.AppImage'
+      };
 
-    // For now, show alert - you'll replace this with actual download links
-    alert(`Desktop app coming soon!\n\nPlatform: ${platform}\n\nYou can build it locally with: npm run electron:build`);
-    
-    // Uncomment when you have releases:
-    // window.open(downloadLinks[platform], '_blank');
+      // For Windows, we have the actual file
+      if (platform === 'windows') {
+        alert(`Desktop app ready!\n\nDownloading Whisper Chat for Windows...\n\nExtract the ZIP and run "Whisper Chat.exe"`);
+        // Uncomment when you upload the file:
+        // window.open(downloadLinks[platform], '_blank');
+      } else {
+        alert(`Desktop app coming soon for ${platform}!\n\nCurrently available for Windows only.`);
+      }
+    }
     
     handleDismiss();
   };
@@ -68,30 +84,40 @@ export default function DesktopDownloadPrompt() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-md animate-slide-in">
+    <div className="fixed bottom-4 right-4 left-4 md:left-auto z-50 max-w-md mx-auto md:mx-0">
       <div className="bg-base-100 shadow-2xl rounded-lg border border-base-300 p-4">
         <div className="flex items-start gap-3">
           <div className="shrink-0">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-              <Download className="w-6 h-6 text-primary" />
+              {isMobile ? (
+                <Smartphone className="w-6 h-6 text-primary" />
+              ) : (
+                <Download className="w-6 h-6 text-primary" />
+              )}
             </div>
           </div>
           
           <div className="flex-1">
             <h3 className="font-semibold text-base-content mb-1">
-              Get the Desktop App
+              {isMobile ? 'Install Mobile App' : 'Get the Desktop App'}
             </h3>
             <p className="text-sm text-base-content/70 mb-3">
-              Download Whisper Chat for a better desktop experience with native notifications and faster performance.
+              {isMobile 
+                ? 'Install Whisper Chat on your phone for a native app experience with offline support.'
+                : 'Download Whisper Chat for a better desktop experience with native notifications and faster performance.'
+              }
             </p>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={handleDownload}
                 className="btn btn-primary btn-sm"
               >
-                <Download className="w-4 h-4" />
-                Download for {platform === 'mac' ? 'macOS' : platform === 'linux' ? 'Linux' : 'Windows'}
+                {isMobile ? <Smartphone className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                {isMobile 
+                  ? (platform === 'android' ? 'Install App' : platform === 'ios' ? 'Add to Home' : 'Install')
+                  : `Download for ${platform === 'mac' ? 'macOS' : platform === 'linux' ? 'Linux' : 'Windows'}`
+                }
               </button>
               <button
                 onClick={handleDismiss}

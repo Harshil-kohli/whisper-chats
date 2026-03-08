@@ -5,27 +5,22 @@
     "output": "dist-electron"
   },
   "files": [
-    "electron/**/*",
-    "public/**/*"
+    "electron/**/*"
   ],
   "win": {
-    "target": ["nsis", "portable"],
-    "icon": "public/icon.svg"
+    "target": ["portable"],
+    "sign": false
   },
   "mac": {
-    "target": ["dmg", "zip"],
-    "icon": "public/icon.svg",
+    "target": ["zip"],
     "category": "public.app-category.social-networking"
   },
   "linux": {
-    "target": ["AppImage", "deb"],
-    "icon": "public/icon.svg",
+    "target": ["AppImage"],
     "category": "Network"
   },
-  "nsis": {
-    "oneClick": false,
-    "allowToChangeInstallationDirectory": true,
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true
+  "extraMetadata": {
+    "description": "Whisper Chat - Real-time messaging application",
+    "author": "Whisper Team"
   }
 }
