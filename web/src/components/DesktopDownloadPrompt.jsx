@@ -6,26 +6,68 @@ export default function DesktopDownloadPrompt() {
   const [platform, setPlatform] = useState('');
 
   useEffect(() => {
-    // Check if user is on desktop and not already using the app
-    const isDesktop = window.innerWidth >= 1024;
-    const isElectron = window.electron !== undefined;
-    const hasSeenPrompt = localStorage.getItem('hideDesktopPrompt');
-
-    if (isDesktop && !isElectron && !hasSeenPrompt) {
-      setShowPrompt(true);
+    // Add delay to ensure page is fully loaded
+    const timer = setTimeout(() => {
+      // Check if user is on desktop and not already using the app
+      const isDesktop = window.innerWidth >= 1024;
+      const isElectron = window.electron !== undefined;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      // Detect platform
-      const userAgent = navigator.userAgent.toLowerCase();
-      if (userAgent.includes('win')) setPlatform('windows');
-      else if (userAgent.includes('mac')) setPlatform('mac');
-      else if (userAgent.includes('linux')) setPlatform('linux');
-      else setPlatform('windows'); // default
-    }
+      // Check localStorage - but with expiry (show again after 7 days)
+      const dismissedData = localStorage.getItem('hideDesktopPrompt');
+      let shouldShow = true;
+      
+      if (dismissedData) {
+        try {
+          const { timestamp } = JSON.parse(dismissedData);
+          const daysSinceDismissed = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+          
+          // Show again after 7 days
+          if (daysSinceDismissed < 7) {
+            shouldShow = false;
+          } else {
+            // Clear old data
+            localStorage.removeItem('hideDesktopPrompt');
+          }
+        } catch (e) {
+          // Invalid data, clear it
+          localStorage.removeItem('hideDesktopPrompt');
+        }
+      }
+
+      console.log('🔍 Desktop Download Prompt:', {
+        isDesktop,
+        isElectron,
+        isMobile,
+        shouldShow,
+        width: window.innerWidth
+      });
+
+      // Show prompt if: desktop size, not electron, not mobile, and not recently dismissed
+      if (isDesktop && !isElectron && !isMobile && shouldShow) {
+        console.log('✅ Showing desktop download prompt');
+        setShowPrompt(true);
+        
+        // Detect platform
+        const userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.includes('win')) setPlatform('windows');
+        else if (userAgent.includes('mac')) setPlatform('mac');
+        else if (userAgent.includes('linux')) setPlatform('linux');
+        else setPlatform('windows'); // default
+      }
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('hideDesktopPrompt', 'true');
+    // Store with timestamp so we can show again after 7 days
+    localStorage.setItem('hideDesktopPrompt', JSON.stringify({
+      timestamp: Date.now(),
+      dismissed: true
+    }));
+    console.log('🚫 Desktop download prompt dismissed (will show again in 7 days)');
   };
 
   const handleDownload = () => {
@@ -48,10 +90,10 @@ export default function DesktopDownloadPrompt() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-md">
+    <div className="fixed bottom-4 right-4 z-50 max-w-md animate-slide-in">
       <div className="bg-base-100 shadow-2xl rounded-lg border border-base-300 p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
               <Download className="w-6 h-6 text-primary" />
             </div>
@@ -84,7 +126,8 @@ export default function DesktopDownloadPrompt() {
           
           <button
             onClick={handleDismiss}
-            className="flex-shrink-0 btn btn-ghost btn-sm btn-circle"
+            className="shrink-0 btn btn-ghost btn-sm btn-circle"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
