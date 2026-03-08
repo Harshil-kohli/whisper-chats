@@ -38,7 +38,6 @@ FROM base AS release
 COPY --from=build /app/server/node_modules server/node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
-COPY --from=build /app/.env ./.env
 
 # Expose port
 EXPOSE 3000
@@ -49,4 +48,4 @@ ENV PORT=3000
 
 # Start the server
 WORKDIR /app/server
-CMD ["bun", "--env-file=../.env", "index.ts"]
+CMD ["bun", "run", "index.ts"]
