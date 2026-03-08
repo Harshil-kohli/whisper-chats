@@ -1,4 +1,4 @@
-# Build stage
+# Build stage - Updated 2026-03-08
 FROM node:20-slim AS builder
 
 WORKDIR /app
