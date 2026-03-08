@@ -65,20 +65,20 @@ export default function DesktopDownloadPrompt() {
       
       alert(instructions);
     } else {
-      // For desktop, direct download
-      const downloadUrl = '/downloads/Whisper-Chat-Windows.zip';
+      // For desktop, direct download of .exe
+      const downloadUrl = '/downloads/Whisper-Chat.exe';
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'Whisper-Chat-Windows.zip';
+      link.download = 'Whisper-Chat.exe';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       // Show instructions after download starts
       setTimeout(() => {
-        alert(`Download started! 📥\n\nOnce downloaded:\n1. Extract the ZIP file\n2. Open the folder\n3. Run "Whisper Chat.exe"\n\nEnjoy the desktop app!`);
+        alert(`Download started! 📥\n\nOnce downloaded:\n1. Run "Whisper-Chat.exe"\n2. Windows may show a security warning - click "More info" then "Run anyway"\n3. Enjoy the desktop app!`);
       }, 500);
     }
     
