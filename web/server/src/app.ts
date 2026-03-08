@@ -97,11 +97,22 @@ if (shouldServeStatic) {
   console.log("📁 Dist exists:", fs.existsSync(distPath));
   console.log("📁 Dist contents:", fs.existsSync(distPath) ? fs.readdirSync(distPath) : "N/A");
   
+  // Check assets folder
+  const assetsPath = path.join(distPath, "assets");
+  if (fs.existsSync(assetsPath)) {
+    console.log("📁 Assets folder contents:", fs.readdirSync(assetsPath).slice(0, 10));
+  } else {
+    console.log("❌ Assets folder not found at:", assetsPath);
+  }
+  
   // Serve static assets FIRST - this must come before the catch-all
   app.use(express.static(distPath, {
     maxAge: '1d',
     etag: true,
-    index: false // Don't serve index.html automatically
+    index: false, // Don't serve index.html automatically
+    setHeaders: (res, filePath) => {
+      console.log("📦 Serving file:", filePath);
+    }
   }));
 
   // Catch-all route for SPA - ONLY for routes without file extensions
