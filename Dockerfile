@@ -39,6 +39,11 @@ COPY --from=build /app/server/node_modules server/node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 
+# List files to verify
+RUN ls -la /app
+RUN ls -la /app/dist || echo "dist folder not found"
+RUN ls -la /app/server || echo "server folder not found"
+
 # Expose port
 EXPOSE 3000
 

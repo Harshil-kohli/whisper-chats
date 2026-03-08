@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import cors from "cors";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 import { clerkMiddleware } from "@clerk/express";
 
@@ -9,6 +11,9 @@ import chatRoutes from "./routes/chatRoutes";
 import messageRoutes from "./routes/messageRoutes";
 import userRoutes from "./routes/userRoutes";
 import { errorHandler } from "./middleware/errorHandler";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -56,17 +61,31 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 
-app.use(errorHandler);
-
+// Serve static files in production
 if (process.env.NODE_ENV === "production") {
-  const distPath = path.join(__dirname, "../../dist");
+  const distPath = path.resolve(__dirname, "../../dist");
   console.log("📁 Serving static files from:", distPath);
+  console.log("📁 __dirname:", __dirname);
   
-  app.use(express.static(distPath));
+  // Serve static assets
+  app.use(express.static(distPath, {
+    maxAge: '1d',
+    etag: true
+  }));
 
+  // Catch-all route for SPA
   app.get("*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
+    const indexPath = path.join(distPath, "index.html");
+    console.log("📄 Serving index.html from:", indexPath);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error("❌ Error serving index.html:", err);
+        res.status(500).send("Error loading application");
+      }
+    });
   });
 }
+
+app.use(errorHandler);
 
 export default app;
