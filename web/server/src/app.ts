@@ -84,36 +84,27 @@ if (shouldServeStatic) {
   console.log("📁 NODE_ENV:", process.env.NODE_ENV);
   console.log("📁 RAILWAY_ENVIRONMENT:", process.env.RAILWAY_ENVIRONMENT);
   
-  // Serve static assets with proper MIME types
+  // Serve static assets
   app.use(express.static(distPath, {
     maxAge: '1d',
-    etag: true,
-    setHeaders: (res, filePath) => {
-      // Set correct MIME types for JS modules
-      if (filePath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      } else if (filePath.endsWith('.mjs')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      } else if (filePath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      }
-    }
+    etag: true
   }));
 
-  // Catch-all route for SPA - ONLY for HTML routes (not assets)
-  // This should NOT match files with extensions like .js, .css, .png, etc.
-  app.get('*', (req, res, next) => {
-    // Skip if it's an API route
-    if (req.path.startsWith('/api')) {
+  // Catch-all route for SPA - serve index.html for non-asset routes
+  // Use a function middleware instead of route pattern
+  app.use((req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
       return next();
     }
     
-    // Skip if it's a file with extension (asset)
-    if (path.extname(req.path)) {
+    // Skip files with extensions (assets like .js, .css, .png, etc.)
+    const ext = path.extname(req.path);
+    if (ext && ext !== '.html') {
       return next();
     }
     
-    // Serve index.html for all other routes (SPA routing)
+    // Serve index.html for all other routes
     const indexPath = path.join(distPath, "index.html");
     console.log("📄 Serving index.html for:", req.path);
     res.sendFile(indexPath, (err) => {
