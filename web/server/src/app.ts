@@ -78,11 +78,24 @@ app.use("/api/users", userRoutes);
 const shouldServeStatic = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
 
 if (shouldServeStatic) {
-  const distPath = path.resolve(__dirname, "../../dist");
+  // In Docker: __dirname = /app/server/src, so ../../dist = /app/dist ✅
+  // But let's also try absolute path as fallback
+  let distPath = path.resolve(__dirname, "../../dist");
+  
+  // Check if dist exists, if not try from /app/dist directly
+  const fs = require('fs');
+  if (!fs.existsSync(distPath)) {
+    console.log("⚠️ Dist not found at:", distPath);
+    distPath = "/app/dist"; // Absolute path in Docker
+    console.log("🔄 Trying absolute path:", distPath);
+  }
+  
   console.log("📁 Serving static files from:", distPath);
   console.log("📁 __dirname:", __dirname);
   console.log("📁 NODE_ENV:", process.env.NODE_ENV);
   console.log("📁 RAILWAY_ENVIRONMENT:", process.env.RAILWAY_ENVIRONMENT);
+  console.log("📁 Dist exists:", fs.existsSync(distPath));
+  console.log("📁 Dist contents:", fs.existsSync(distPath) ? fs.readdirSync(distPath) : "N/A");
   
   // Serve static assets FIRST - this must come before the catch-all
   app.use(express.static(distPath, {
@@ -102,6 +115,7 @@ if (shouldServeStatic) {
     const ext = path.extname(req.path);
     if (ext) {
       // Asset not found, return 404
+      console.log("❌ Asset not found:", req.path);
       return res.status(404).send('File not found');
     }
     
