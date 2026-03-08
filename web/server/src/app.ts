@@ -88,10 +88,10 @@ if (shouldServeStatic) {
     etag: true
   }));
 
-  // Catch-all route for SPA
-  app.get("*", (req, res) => {
+  // Catch-all route for SPA - use regex instead of * for Express 5
+  app.get(/^\/(?!api).*/, (req, res) => {
     const indexPath = path.join(distPath, "index.html");
-    console.log("📄 Serving index.html from:", indexPath);
+    console.log("📄 Serving index.html for:", req.path);
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error("❌ Error serving index.html:", err);
