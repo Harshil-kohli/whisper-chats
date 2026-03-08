@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/clerk-react";
 import PageLoader from "./components/PageLoader";
 import useUserSync from "./hooks/useUserSync";
 import { InstallPrompt } from "./components/InstallPrompt";
+import DesktopDownloadPrompt from "./components/DesktopDownloadPrompt";
 
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -19,6 +20,7 @@ function App() {
         <Route path="/chat" element={isSignedIn ? <ChatPage /> : <Navigate to={"/"} />} />
       </Routes>
       <InstallPrompt />
+      <DesktopDownloadPrompt />
     </>
   );
 }

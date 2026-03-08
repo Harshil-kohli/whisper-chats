@@ -1,0 +1,31 @@
+{
+  "appId": "com.whisper.chat",
+  "productName": "Whisper Chat",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "electron/**/*",
+    "public/**/*"
+  ],
+  "win": {
+    "target": ["nsis", "portable"],
+    "icon": "public/icon.svg"
+  },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "public/icon.svg",
+    "category": "public.app-category.social-networking"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "icon": "public/icon.svg",
+    "category": "Network"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}

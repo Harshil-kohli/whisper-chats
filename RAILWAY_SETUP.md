@@ -6,7 +6,7 @@ Go to your Railway project → Variables tab and add these:
 
 ### Runtime Variables (Required)
 ```
-MONGODB_URI=mongodb+srv://Wisper:Eachine124019@cluster0.j7kbsti.mongodb.net/?appName=Cluster0
+MONGODB_URI=mongodb+srv://Wisper:Eachine124019@cluster0.j7kbsti.mongodb.net/whisper?retryWrites=true&w=majority&appName=Cluster0
 CLERK_PUBLISHABLE_KEY=pk_test_cmFwaWQtZWFnbGUtMzIuY2xlcmsuYWNjb3VudHMuZGV2JA
 CLERK_SECRET_KEY=sk_test_x1jaAm0pVHxG9qYEj3La27ts2SsGztWTfKChbW451q
 NODE_ENV=production
