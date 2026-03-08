@@ -84,27 +84,28 @@ if (shouldServeStatic) {
   console.log("📁 NODE_ENV:", process.env.NODE_ENV);
   console.log("📁 RAILWAY_ENVIRONMENT:", process.env.RAILWAY_ENVIRONMENT);
   
-  // Serve static assets
+  // Serve static assets FIRST - this must come before the catch-all
   app.use(express.static(distPath, {
     maxAge: '1d',
-    etag: true
+    etag: true,
+    index: false // Don't serve index.html automatically
   }));
 
-  // Catch-all route for SPA - serve index.html for non-asset routes
-  // Use a function middleware instead of route pattern
+  // Catch-all route for SPA - ONLY for routes without file extensions
   app.use((req, res, next) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
       return next();
     }
     
-    // Skip files with extensions (assets like .js, .css, .png, etc.)
+    // If the file has an extension, it's an asset - let it 404 if not found
     const ext = path.extname(req.path);
-    if (ext && ext !== '.html') {
-      return next();
+    if (ext) {
+      // Asset not found, return 404
+      return res.status(404).send('File not found');
     }
     
-    // Serve index.html for all other routes
+    // No extension = SPA route, serve index.html
     const indexPath = path.join(distPath, "index.html");
     console.log("📄 Serving index.html for:", req.path);
     res.sendFile(indexPath, (err) => {
