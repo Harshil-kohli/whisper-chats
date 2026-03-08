@@ -1,56 +1,53 @@
-# Use official Bun image
-FROM oven/bun:1 as base
+# Build stage
+FROM node:20-slim AS builder
+
 WORKDIR /app
 
-# Install Node.js for npm
-FROM base AS install
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
+# Install Bun
+RUN apt-get update && apt-get install -y curl unzip && \
+    curl -fsSL https://bun.sh/install | bash && \
+    ln -s /root/.bun/bin/bun /usr/local/bin/bun
 
-# Install frontend dependencies
-COPY web/package.json web/package-lock.json* web/bun.lock* ./
-RUN npm install
+# Copy and install frontend dependencies
+COPY web/package*.json ./
+RUN npm ci --only=production
 
-# Install server dependencies
+# Copy and install server dependencies  
 COPY web/server/package.json ./server/
-RUN cd server && bun install
+RUN cd server && bun install --production
 
-# Build frontend
-FROM base AS build
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
-
-COPY --from=install /app/node_modules node_modules
-COPY --from=install /app/server/node_modules server/node_modules
-COPY web/ .
-
-# Build the frontend
+# Copy source and build
+COPY web/ ./
 ARG VITE_CLERK_PUBLISHABLE_KEY
 ARG VITE_API_URL
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
 ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build
 
-# Production image
-FROM base AS release
-COPY --from=build /app/server/node_modules server/node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server ./server
+RUN npm run build && \
+    echo "=== Build complete ===" && \
+    ls -la dist/ && \
+    echo "=== Dist contents ===" && \
+    find dist -type f
 
-# List files to verify
-RUN ls -la /app
-RUN ls -la /app/dist || echo "dist folder not found"
-RUN ls -la /app/server || echo "server folder not found"
+# Production stage
+FROM oven/bun:1-slim
 
-# Expose port
-EXPOSE 3000
+WORKDIR /app
 
-# Environment variables
+# Copy server and built files
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/dist ./dist
+
+# Verify
+RUN echo "=== Final structure ===" && \
+    ls -la && \
+    ls -la dist/ && \
+    ls -la server/
+
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Start the server
+EXPOSE 3000
+
 WORKDIR /app/server
 CMD ["bun", "run", "index.ts"]
