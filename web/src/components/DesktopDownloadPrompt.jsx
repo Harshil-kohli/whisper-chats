@@ -58,24 +58,20 @@ export default function DesktopDownloadPrompt() {
 
   const handleDownload = () => {
     if (isMobile) {
-      // For mobile, show PWA install prompt or app store links
-      alert(`Mobile app available!\n\nFor Android: Install as PWA (Add to Home Screen)\nFor iOS: Install as PWA (Add to Home Screen)\n\nOr download from app stores (coming soon)`);
+      // For mobile, show PWA install instructions
+      const instructions = platform === 'ios' 
+        ? `Install Whisper Chat on iOS:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm\n\nYou'll get a native app experience with offline support!`
+        : `Install Whisper Chat on Android:\n\n1. Tap the menu (⋮) in your browser\n2. Tap "Add to Home screen" or "Install app"\n3. Tap "Install" to confirm\n\nYou'll get a native app experience with offline support!`;
+      
+      alert(instructions);
     } else {
-      // For desktop, show download link
-      const downloadLinks = {
-        windows: '/downloads/Whisper-Chat-Windows.zip',
-        mac: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.dmg',
-        linux: 'https://github.com/YOUR_USERNAME/whisper/releases/latest/download/Whisper-Chat.AppImage'
-      };
-
-      // For Windows, we have the actual file
-      if (platform === 'windows') {
-        alert(`Desktop app ready!\n\nDownloading Whisper Chat for Windows...\n\nExtract the ZIP and run "Whisper Chat.exe"`);
-        // Uncomment when you upload the file:
-        // window.open(downloadLinks[platform], '_blank');
-      } else {
-        alert(`Desktop app coming soon for ${platform}!\n\nCurrently available for Windows only.`);
-      }
+      // For desktop, provide GitHub releases link
+      const message = `Desktop App Available!\n\nTo download Whisper Chat for ${platform === 'mac' ? 'macOS' : platform === 'linux' ? 'Linux' : 'Windows'}:\n\n1. Visit our GitHub Releases page\n2. Download the latest version for your platform\n3. Extract and run the app\n\nOpening GitHub Releases...`;
+      
+      alert(message);
+      
+      // Open GitHub releases page
+      window.open('https://github.com/Harshil-kohli/whisper-chats/releases', '_blank');
     }
     
     handleDismiss();
