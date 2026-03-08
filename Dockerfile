@@ -8,10 +8,11 @@ RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
+# Install frontend dependencies
 COPY web/package.json web/package-lock.json* web/bun.lock* ./
-RUN npm install
+RUN npm install --ignore-scripts
 
-# Copy server dependencies
+# Install server dependencies
 COPY web/server/package.json ./server/
 RUN cd server && bun install
 
@@ -22,6 +23,7 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs
 
 COPY --from=install /app/node_modules node_modules
+COPY --from=install /app/server/node_modules server/node_modules
 COPY web/ .
 
 # Build the frontend
@@ -33,9 +35,10 @@ RUN npm run build
 
 # Production image
 FROM base AS release
-COPY --from=install /app/server/node_modules server/node_modules
+COPY --from=build /app/server/node_modules server/node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
+COPY --from=build /app/.env ./.env
 
 # Expose port
 EXPOSE 3000
@@ -46,4 +49,4 @@ ENV PORT=3000
 
 # Start the server
 WORKDIR /app/server
-CMD ["bun", "run", "index.ts"]
+CMD ["bun", "--env-file=../.env", "index.ts"]
