@@ -2,8 +2,12 @@
 FROM oven/bun:1 as base
 WORKDIR /app
 
-# Install dependencies
+# Install Node.js for npm
 FROM base AS install
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
 COPY web/package.json web/package-lock.json* web/bun.lock* ./
 RUN npm install
 
@@ -13,6 +17,10 @@ RUN cd server && bun install
 
 # Build frontend
 FROM base AS build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
 COPY --from=install /app/node_modules node_modules
 COPY web/ .
 
