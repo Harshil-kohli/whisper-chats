@@ -1,5 +1,8 @@
-# Build stage - Force rebuild v2
+# Build stage - FORCE NEW BUILD v3
 FROM node:20-slim AS builder
+
+# Force cache bust
+RUN echo "Build timestamp: $(date)" > /build-time.txt
 
 WORKDIR /app
 
@@ -45,9 +48,9 @@ RUN echo "=== Final structure ===" && \
     ls -la server/
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=${PORT:-3000}
 
-EXPOSE 3000
+EXPOSE ${PORT:-3000}
 
 WORKDIR /app/server
 CMD ["bun", "run", "index.ts"]

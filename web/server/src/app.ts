@@ -45,6 +45,11 @@ app.use(express.json());
 app.use(clerkMiddleware());
 
 app.get("/health", (req, res) => {
+  const distPath = path.resolve(__dirname, "../../dist");
+  const fs = require('fs');
+  const distExists = fs.existsSync(distPath);
+  const distFiles = distExists ? fs.readdirSync(distPath) : [];
+  
   res.json({ 
     status: "ok", 
     message: "Server is running",
@@ -52,6 +57,12 @@ app.get("/health", (req, res) => {
     env: {
       nodeEnv: process.env.NODE_ENV,
       hasClerkKeys: !!(process.env.CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY),
+    },
+    paths: {
+      __dirname,
+      distPath,
+      distExists,
+      distFiles: distFiles.slice(0, 10)
     }
   });
 });
@@ -61,11 +72,15 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 
-// Serve static files in production
-if (process.env.NODE_ENV === "production") {
+// Serve static files in production AND development (for Railway)
+const shouldServeStatic = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
+
+if (shouldServeStatic) {
   const distPath = path.resolve(__dirname, "../../dist");
   console.log("📁 Serving static files from:", distPath);
   console.log("📁 __dirname:", __dirname);
+  console.log("📁 NODE_ENV:", process.env.NODE_ENV);
+  console.log("📁 RAILWAY_ENVIRONMENT:", process.env.RAILWAY_ENVIRONMENT);
   
   // Serve static assets
   app.use(express.static(distPath, {
