@@ -13,38 +13,19 @@ export default function DesktopDownloadPrompt() {
       const isElectron = window.electron !== undefined;
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      // Check localStorage - but with expiry (show again after 7 days)
-      const dismissedData = localStorage.getItem('hideDesktopPrompt');
-      let shouldShow = true;
-      
-      if (dismissedData) {
-        try {
-          const { timestamp } = JSON.parse(dismissedData);
-          const daysSinceDismissed = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
-          
-          // Show again after 7 days
-          if (daysSinceDismissed < 7) {
-            shouldShow = false;
-          } else {
-            // Clear old data
-            localStorage.removeItem('hideDesktopPrompt');
-          }
-        } catch (e) {
-          // Invalid data, clear it
-          localStorage.removeItem('hideDesktopPrompt');
-        }
-      }
+      // Check sessionStorage (only for current session, not persistent)
+      const dismissedThisSession = sessionStorage.getItem('hideDesktopPrompt');
 
       console.log('🔍 Desktop Download Prompt:', {
         isDesktop,
         isElectron,
         isMobile,
-        shouldShow,
+        dismissedThisSession,
         width: window.innerWidth
       });
 
-      // Show prompt if: desktop size, not electron, not mobile, and not recently dismissed
-      if (isDesktop && !isElectron && !isMobile && shouldShow) {
+      // Show prompt if: desktop size, not electron, not mobile, and not dismissed this session
+      if (isDesktop && !isElectron && !isMobile && !dismissedThisSession) {
         console.log('✅ Showing desktop download prompt');
         setShowPrompt(true);
         
@@ -62,12 +43,9 @@ export default function DesktopDownloadPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    // Store with timestamp so we can show again after 7 days
-    localStorage.setItem('hideDesktopPrompt', JSON.stringify({
-      timestamp: Date.now(),
-      dismissed: true
-    }));
-    console.log('🚫 Desktop download prompt dismissed (will show again in 7 days)');
+    // Store in sessionStorage (clears on page reload/close)
+    sessionStorage.setItem('hideDesktopPrompt', 'true');
+    console.log('🚫 Desktop download prompt dismissed (will show again on page reload)');
   };
 
   const handleDownload = () => {
