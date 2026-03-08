@@ -57,6 +57,7 @@ app.get("/health", (req, res) => {
     env: {
       nodeEnv: process.env.NODE_ENV,
       hasClerkKeys: !!(process.env.CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY),
+      hasMongoUri: !!process.env.MONGODB_URI,
     },
     paths: {
       __dirname,
@@ -67,6 +68,7 @@ app.get("/health", (req, res) => {
   });
 });
 
+// API routes MUST come before static file serving
 app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/messages", messageRoutes);
@@ -99,6 +101,8 @@ if (shouldServeStatic) {
       }
     });
   });
+} else {
+  console.log("⚠️ Not serving static files - NODE_ENV:", process.env.NODE_ENV);
 }
 
 app.use(errorHandler);

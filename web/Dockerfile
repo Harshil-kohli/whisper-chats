@@ -17,11 +17,14 @@ FROM base AS build
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# Build the frontend
+# Build the frontend with Railway env vars
 ARG VITE_CLERK_PUBLISHABLE_KEY
 ARG VITE_API_URL
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_API_URL=${VITE_API_URL}
+
+# Log build args for debugging
+RUN echo "Building with VITE_API_URL: $VITE_API_URL"
 RUN npm run build
 
 # Production image
@@ -35,8 +38,7 @@ EXPOSE 3000
 
 # Environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Start the server
-WORKDIR /app/server
-CMD ["bun", "run", "index.ts"]
+# Start the server from app root so it can find dist folder
+WORKDIR /app
+CMD ["bun", "run", "server/index.ts"]
